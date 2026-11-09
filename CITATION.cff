@@ -3,8 +3,8 @@ message: "If you use this project, please cite it."
 title: "Fake News Detection: explainable, cross-dataset, in-browser"
 type: software
 license: MIT
-repository-code: "https://github.com/gorintlapavanprasad/Fake_news_Detection"
-url: "https://gorintlapavanprasad.github.io/Fake_news_Detection/"
+repository-code: "https://github.com/gorintlapavanprasad/fake-news-detection"
+url: "https://gorintlapavanprasad.github.io/fake-news-detection/"
 keywords: [fake news detection, misinformation, NLP, TF-IDF, DistilBERT, explainable AI]
 authors:
   - family-names: Gorintla

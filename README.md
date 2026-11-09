@@ -1,12 +1,12 @@
 # Fake News Detector
 
-[![CI](https://github.com/gorintlapavanprasad/Fake_news_Detection/actions/workflows/ci.yml/badge.svg)](https://github.com/gorintlapavanprasad/Fake_news_Detection/actions/workflows/ci.yml)
+[![CI](https://github.com/gorintlapavanprasad/fake-news-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/gorintlapavanprasad/fake-news-detection/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Live demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://gorintlapavanprasad.github.io/Fake_news_Detection/)
+[![Live demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://gorintlapavanprasad.github.io/fake-news-detection/)
 
 **An open-source fake news classifier that runs entirely in your browser and shows which words drove each decision.**
 
-**[Try the live demo](https://gorintlapavanprasad.github.io/Fake_news_Detection/)**. Paste an article, get REAL or FAKE, and see the evidence words marked in red and green inside your own text. Nothing is uploaded and no API keys are used.
+**[Try the live demo](https://gorintlapavanprasad.github.io/fake-news-detection/)**. Paste an article, get REAL or FAKE, and see the evidence words marked in red and green inside your own text. Nothing is uploaded and no API keys are used.
 
 Keywords: fake news detection, misinformation, NLP, text classification, TF-IDF, logistic regression, DistilBERT, explainable AI, GitHub Pages, JavaScript, Python, scikit-learn.
 
