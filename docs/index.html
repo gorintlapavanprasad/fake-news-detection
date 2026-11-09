@@ -12,7 +12,12 @@
 <meta property="og:title" content="Fake News Detector - in-browser, explainable, open source">
 <meta property="og:description" content="Paste an article, get REAL or FAKE and see the words that drove the decision. 100% client-side.">
 <meta property="og:url" content="https://gorintlapavanprasad.github.io/fake-news-detection/">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://gorintlapavanprasad.github.io/fake-news-detection/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A fake-news-style paragraph with the words that pushed the score toward fake marked in red, and a FAKE stamp.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://gorintlapavanprasad.github.io/fake-news-detection/preview.png">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231c2024'/%3E%3Cpath d='M7 17l6 6 12-14' stroke='%23f6f7f5' stroke-width='4' fill='none'/%3E%3C/svg%3E">
 <script type="application/ld+json">
@@ -37,7 +42,7 @@
 body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.6 var(--serif)}
 a{color:inherit;text-underline-offset:3px}
 .page{max-width:1040px;margin:0 auto;padding:44px 24px 70px;display:grid;grid-template-columns:15rem minmax(0,1fr);gap:56px}
-@media(max-width:800px){.page{grid-template-columns:1fr;gap:28px;padding-top:28px}}
+
 aside h1{font-size:1.9rem;line-height:1.1;letter-spacing:-.01em;margin:0 0 14px;font-weight:700}
 aside p{margin:0 0 14px;font-size:1rem;color:var(--mute)}
 aside nav{font:.9rem/1.9 var(--sans);border-top:1px solid var(--rule);padding-top:12px;margin-top:22px}
@@ -76,6 +81,19 @@ section p,section li{font-size:1rem}section ul{padding-left:1.1rem}
 dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 24px;font-size:1rem}
 section h3{font:600 .85rem var(--sans);color:var(--mute);margin:18px 0 6px}dt{color:var(--ink)}dd{margin:0;font:600 1rem var(--mono);text-align:right}
 .small{font:.88rem var(--sans);color:var(--mute)}
+@media(max-width:800px){
+  .page{grid-template-columns:1fr;gap:22px;padding-top:22px}
+  aside h1{font-size:1.6rem;margin-bottom:8px}
+  aside p:nth-of-type(2){display:none}
+  aside nav{display:flex;flex-wrap:wrap;gap:0 18px;border-top:0;padding-top:0;margin-top:6px}
+  aside nav a{padding:8px 0}
+  .go{min-height:46px}
+  .lnk{min-height:44px;padding:0 2px}
+  .actions{gap:0 16px}
+  .count{margin-left:0;width:100%;padding-bottom:6px}
+  .sig b{display:block;min-width:0}
+  .sheet{max-height:320px}
+}
 </style>
 </head>
 <body>

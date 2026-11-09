@@ -6,6 +6,8 @@
 
 **An open-source fake news classifier that runs entirely in your browser and shows which words drove each decision.**
 
+![Fake News Detector marking the evidence words in a clickbait paragraph](docs/preview.png)
+
 **[Try the live demo](https://gorintlapavanprasad.github.io/fake-news-detection/)**. Paste an article, get REAL or FAKE, and see the evidence words marked in red and green inside your own text. Nothing is uploaded and no API keys are used.
 
 Keywords: fake news detection, misinformation, NLP, text classification, TF-IDF, logistic regression, DistilBERT, explainable AI, GitHub Pages, JavaScript, Python, scikit-learn.
