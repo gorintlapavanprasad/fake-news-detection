@@ -88,3 +88,27 @@ Unseen source: the final model scores 41.7% on human-written GossipCop articles 
 DistilBERT (3,000 training articles, 1 epoch, max length 128, CPU): 95.6% on ISOT and 84.1% on WELFake (800 held-out articles each). It trained in 38 minutes. The TF-IDF logistic regression trains in about a minute on all 62,000 articles and scores higher, so it ships in the website. A GPU run with the full data would be the fair comparison.
 
 Website: `docs/` runs the model in the browser. Parity with Python is tested to 1e-3 and measured at 8e-7. A robustness test found and fixed a bug where words such as "constructor" produced NaN.
+
+## 8. Update: five sources, leave-one-source-out, and what did not work
+
+This section supersedes the GossipCop figures in section 7 (that model had not trained on GossipCop; the shipped model now has).
+
+Sources: ISOT, WELFake, GossipCop (human-written), PolitiFact (human-written, 277 articles) and COVID-19 claims and tweets. Machine-written variants are excluded on purpose.
+
+| Source | Held-out articles (seen source) | Source left out entirely |
+|---|---|---|
+| ISOT | 94.3% | 64.8% |
+| WELFake | 86.9% | 47.4% |
+| GossipCop | 76.2% | 44.0% |
+| PolitiFact | 69.6% | 66.1% |
+| COVID-19 | 86.2% | 46.1% |
+
+Training recipe for the right-hand column (`loso_eval.py`): up to 12,000 articles per training source, balanced class weights, 30,000 TF-IDF features, logistic regression with C = 30. Recipe A (ISOT and WELFake only) gave similar numbers, so more sources did not improve transfer.
+
+Negative results, kept as documented experiments:
+- Model confidence, share of known words and text length do not predict errors on an unseen source (AUROC 0.44 to 0.64).
+- Centroid similarity as an out-of-domain detector (`ood_eval.py`, `results/ood.csv`): AUROC 0.34 to 0.88 depending on the held-out source; below 0.5 for ISOT, GossipCop and PolitiFact. Not shipped.
+
+Consequences for the website: it now lists both result columns, says the model cannot tell when it is outside its experience, and labels its output "Model score" rather than "confident".
+
+Open problems: a reliable out-of-domain detector, a larger evaluation set for PolitiFact, and a GPU run of DistilBERT on the full data.

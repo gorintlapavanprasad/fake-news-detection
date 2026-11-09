@@ -1,0 +1,11 @@
+held_out,recipe,n_test,accuracy,majority_baseline
+ISOT,A: ISOT+WELFake only,3000,0.7233,0.5457
+ISOT,B: all other sources,3000,0.6483,0.5457
+WELFake,A: ISOT+WELFake only,3000,0.4743,0.567
+WELFake,B: all other sources,3000,0.474,0.567
+GossipCop,A: ISOT+WELFake only,3000,0.408,0.667
+GossipCop,B: all other sources,3000,0.4403,0.667
+PolitiFact,A: ISOT+WELFake only,277,0.722,0.6534
+PolitiFact,B: all other sources,277,0.6606,0.6534
+COVID,A: ISOT+WELFake only,3000,0.4313,0.532
+COVID,B: all other sources,3000,0.4607,0.532

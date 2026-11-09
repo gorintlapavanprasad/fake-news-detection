@@ -74,7 +74,7 @@ section{margin-top:44px;border-top:1px solid var(--rule);padding-top:16px}
 h2{font-size:1.25rem;margin:0 0 8px;letter-spacing:-.005em}
 section p,section li{font-size:1rem}section ul{padding-left:1.1rem}
 dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 24px;font-size:1rem}
-dt{color:var(--ink)}dd{margin:0;font:600 1rem var(--mono);text-align:right}
+section h3{font:600 .85rem var(--sans);color:var(--mute);margin:18px 0 6px}dt{color:var(--ink)}dd{margin:0;font:600 1rem var(--mono);text-align:right}
 .small{font:.88rem var(--sans);color:var(--mute)}
 </style>
 </head>
@@ -113,26 +113,22 @@ dt{color:var(--ink)}dd{margin:0;font:600 1rem var(--mono);text-align:right}
  <section id="how">
   <h2>How it works</h2>
   <p>The text is lower-cased and stripped of links, digits and punctuation. Source giveaways such as a "(Reuters)" dateline are removed, so the model can't just recognise the outlet. What's left becomes TF-IDF weights over 30,000 words and word pairs, which a logistic regression turns into a probability.</p>
-  <p>The same arithmetic runs in Python for training and in JavaScript here. A test feeds both the same 25 texts and requires the answers to agree to within 0.001. The whole model is a 0.9 MB file.</p>
+  <p>The same arithmetic runs in Python for training and in JavaScript here. A test feeds both the same set of texts and requires the answers to agree to within 0.001. The whole model is a 0.9 MB file.</p>
  </section>
 
  <section id="numbers">
   <h2>The numbers</h2>
-  <dl>
-   <dt>Held-out articles from ISOT (Reuters vs. fake-news sites)</dt><dd id="a1">...</dd>
-   <dt>Held-out articles from WELFake (mixed outlets)</dt><dd id="a2">...</dd>
-   <dt>Trained on ISOT alone, tested on WELFake</dt><dd>about 50%</dd>
-   <dt>Celebrity gossip (GossipCop), never seen in training</dt><dd id="a3">...</dd>
-   <dt>Articles used to train this model</dt><dd id="ntr">...</dd>
-  </dl>
-  <p class="small">The third row is why the model learns from more than one source: trained on ISOT alone it was right about half the time on articles from other outlets, which is chance for two classes. The fourth row is the honest limit: on celebrity gossip, a topic it never saw, it is wrong more often than right and tends to call real stories fake. Treat results on non-political news with extra suspicion.</p>
+  <h3>News from sources it was trained on (held-out articles)</h3>
+  <dl id="seen"></dl>
+  <h3>News from a source it never saw (that source left out of training)</h3>
+  <dl id="unseen"></dl>
+  <p class="small">The first list measures articles the model never trained on, but written by the same outlets or datasets it did train on. The second leaves one whole source out. There the model is close to a coin flip, and sometimes worse, because each dataset has its own idea of what "fake" looks like. Expect useful answers only for news that resembles the first list. <span id="ntr"></span></p>
  </section>
-
  <section id="limits">
   <h2>What it can't do</h2>
   <ul>
    <li>It scores writing style learned from mostly English, US-politics articles from 2016 and 2017. It does not check whether any claim is true.</li>
-   <li>Satire, opinion columns, other languages and brand-new topics can fool it. Under 10 words it says unsure.</li>
+   <li>Satire, opinion columns, other languages and brand-new topics can fool it. It cannot tell when a text is outside what it knows, so it sounds just as sure when it is wrong. Under 10 words it says unsure.</li>
    <li>Use it as a prompt to look closer, then check the source and a fact-checking site.</li>
   </ul>
  </section>
@@ -185,12 +181,14 @@ function run(){
  $("stamp").textContent=shown;$("stamp").className="stamp "+shown;
  $("sentence").textContent=unsure
   ?"The model leans "+label.toLowerCase()+" ("+Math.min(99,Math.round(conf*100))+"%) but not strongly enough to call it. "+r.words+" words read."
-  :Math.min(99,Math.round(conf*100))+"% confident it is "+label.toLowerCase()+". "+r.words+" words read.";
+  :"Model score: "+Math.min(99,Math.round(conf*100))+"% "+label.toLowerCase()+". "+r.words+" words read.";
  $("mark").style.left=(r.pReal*100)+"%";
  annotate($("sheet"),title,text,r.unigrams);
  list($("rw"),r.real);list($("fw"),r.fake);
  var n=[];
  if(r.words<25)n.push("Short text: results are less reliable.");
+ var u=model.metrics.unseen_acc;
+ if(u){var v=Object.keys(u).map(function(k){return u[k]});n.push("On news from a source it had never seen, this model scored between "+Math.round(Math.min.apply(null,v)*100)+"% and "+Math.round(Math.max.apply(null,v)*100)+"%. It cannot tell when that applies to your text, so treat the verdict as a hint.")}
  n.push("This scores writing style, not facts. Check the claims elsewhere.");
  $("notes").replaceChildren.apply($("notes"),n.map(function(t){var p=document.createElement("p");p.className="note";p.textContent=t;return p}));
  $("out").style.display="block";$("out").scrollIntoView({block:"nearest",behavior:"smooth"});
@@ -202,11 +200,11 @@ $("go").onclick=run;$("text").oninput=$("title").oninput=upd;
 $("text").onkeydown=function(e){if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))run()};
 
 fetch("model.json").then(function(r){return r.json()}).then(function(m){
- model=m;$("go").disabled=false;var a=m.metrics.heldout_acc;
- $("a1").textContent=(a.ISOT*100).toFixed(1)+"%";$("a2").textContent=(a.WELFake*100).toFixed(1)+"%";
- if(m.metrics.unseen_acc)$("a3").textContent=(m.metrics.unseen_acc.GossipCop_human*100).toFixed(1)+"%";
- $("ntr").textContent=m.metrics.n_train.toLocaleString("en-US");
-}).catch(function(){$("err").textContent="The model file (model.json) didn't load. If you opened this page as a local file, serve the folder over http instead."});
+ model=m;$("go").disabled=false;
+ var NAMES={ISOT:"ISOT (Reuters vs. fake-news sites)",WELFake:"WELFake (mixed outlets)",GossipCop:"GossipCop (celebrity news)",PolitiFact:"PolitiFact (fact-checked politics, only 277 articles)",COVID:"COVID-19 claims and tweets"};
+ function fill(id,obj){var dl=$(id);dl.textContent="";Object.keys(obj||{}).forEach(function(k){var a=document.createElement("dt"),b=document.createElement("dd");a.textContent=NAMES[k]||k;b.textContent=(obj[k]*100).toFixed(1)+"%";dl.appendChild(a);dl.appendChild(b)})}
+ fill("seen",m.metrics.heldout_acc);fill("unseen",m.metrics.unseen_acc);
+ $("ntr").textContent="Trained on "+m.metrics.n_train.toLocaleString("en-US")+" articles from "+m.metrics.sources.length+" sources.";}).catch(function(){$("err").textContent="The model file (model.json) didn't load. If you opened this page as a local file, serve the folder over http instead."});
 })();
 </script>
 </body></html>

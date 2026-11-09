@@ -12,19 +12,25 @@ Keywords: fake news detection, misinformation, NLP, text classification, TF-IDF,
 
 ## What is different here
 
-Most fake-news repos report 99% on one dataset and stop. This project measures what happens on other data, and says so.
+Most fake-news repos report 99% on one dataset and stop. This project measures what happens on data the model has not seen, and says so.
 
-| Test | Result |
-|---|---|
-| Held-out articles, ISOT (Reuters vs. fake-news sites) | 97.1% |
-| Held-out articles, WELFake (mixed outlets, no overlap with ISOT) | 89.9% |
-| Trained on ISOT alone, tested on WELFake | about 50% (chance) |
-| Celebrity gossip (GossipCop), never seen in training | 41.7% (below chance) |
+The model is trained on five sources: ISOT (Reuters vs. fake-news sites), WELFake (mixed outlets, overlap with ISOT removed), GossipCop (celebrity news), PolitiFact (fact-checked politics, only 277 articles) and COVID-19 claims and tweets.
 
-- The original dataset has giveaways, such as "(Reuters)" datelines, that let a model score about 99% without learning anything about truth. They are stripped before training.
-- A model trained on one source collapses on another. Training on two sources fixed most of that for news, but not for a new genre such as celebrity gossip. The site shows this limit openly.
-- DistilBERT was fine-tuned too (95.6% and 84.1% on 800 held-out articles per dataset, 3,000 training articles, one epoch, CPU only). It did not beat the TF-IDF model under that budget, and at about 270 MB it cannot ship in a static site.
+| Source | Held-out articles (source seen in training) | Source left out of training entirely |
+|---|---|---|
+| ISOT | 94.3% | 64.8% |
+| WELFake | 86.9% | 47.4% |
+| GossipCop | 76.2% | 44.0% |
+| PolitiFact | 69.6% (56 articles) | 66.1% |
+| COVID-19 | 86.2% | 46.1% |
 
+The right-hand column comes from leave-one-source-out training (`improved/loso_eval.py`). Four of the five scores are at or below what always guessing the bigger class would give (53% to 67%, depending on the source). The honest reading: this is a writing-style classifier, and each dataset defines "fake" differently, so a style learned from one source does not carry over to another.
+
+What else I measured:
+- **Giveaways in the original data.** "(Reuters)" datelines and outlet tags let a model score about 99% without learning anything about truth. They are stripped before training.
+- **Warning signals.** I tried to detect when a text is outside the model's experience. Model confidence and the share of known words do not predict mistakes (AUROC about 0.5). Similarity to each source's centroid separated the COVID tweets (0.88) and partly WELFake (0.61), but did worse than chance for ISOT, GossipCop and PolitiFact (`improved/ood_eval.py`). None of these is shipped, so the site cannot warn you; it states the limit instead.
+- **DistilBERT.** Fine-tuned on 3,000 articles for one epoch on a CPU: 95.6% on ISOT and 84.1% on WELFake (800 held-out articles each). It did not beat TF-IDF under that budget, and at about 270 MB it cannot ship in a static site.
+- **Trade-off.** Training on five sources lowered accuracy on the original two (ISOT 97.1% to 94.3% for the earlier two-source model).
 ## How it works
 
 ```
@@ -34,7 +40,7 @@ article text -> clean (strip links, digits, source giveaways)
              -> per-word contributions -> highlighted evidence
 ```
 
-The same arithmetic is implemented twice: in Python (`improved/`) for training and in JavaScript (`docs/engine.js`) for the website. `tests/test_parity.mjs` feeds both the same texts and requires agreement within 0.001 (measured worst gap: 8e-7). `tests/eval_js_engine.mjs` scores the JavaScript engine on 1,500 held-out articles per dataset and requires its accuracy to match Python's.
+The same arithmetic is implemented twice: in Python (`improved/`) for training and in JavaScript (`docs/engine.js`) for the website. `tests/test_parity.mjs` feeds both the same texts and requires agreement within 0.001 (measured worst gap: 2e-6). `tests/eval_js_engine.mjs` scores the JavaScript engine on 1,000 held-out articles per source and requires its accuracy to match Python's.
 
 ## Run it
 
@@ -49,8 +55,8 @@ pip install -r requirements-dev.txt
 # put Fake.csv and True.csv (Kaggle "Fake and Real News", ISOT) in Prototype/data/raw/
 cd improved
 python run_experiments.py --data ../Prototype/data/raw      # 16 model/feature variations
-python prepare_external.py --isot ../Prototype/data/raw     # second dataset (WELFake), see below
-python export_web.py --isot ../Prototype/data/raw --ext external/welfake_clean.csv
+python prepare_external.py --isot ../Prototype/data/raw     # clean WELFake (needs the HF files, see Data sources)
+python loso_eval.py --isot ../Prototype/data/raw --ext external   # leave-one-source-out\npython export_web.py --isot ../Prototype/data/raw --ext external
 ```
 
 Tests:
@@ -80,8 +86,8 @@ It scores writing style learned from mostly English, US-politics articles from 2
 ## Roadmap
 
 1. Add evidence retrieval (search or fact-check APIs) so claims, not only style, are checked. This needs a server and keys, so it cannot live on GitHub Pages.
-2. Fine-tune DistilBERT on the full data with a GPU and compare on the unseen-source tests.
-3. Collect more varied training sources (entertainment, health, science) and recalibrate the probabilities.
+2. Fine-tune DistilBERT on the full data with a GPU and compare on the leave-one-source-out tests.
+3. Find a reliable way to detect text outside the model's experience; the simple signals tried so far do not work.
 
 ## Contributing and license
 
