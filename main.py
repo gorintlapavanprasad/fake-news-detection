@@ -23,8 +23,10 @@ nltk.download('punkt_tab')
 stopwords = set(nltk.corpus.stopwords.words("english"))
 
 #Creating a dataframe by loading the dataset
-df_Fake = pd.read_csv("/content/dataset/Fake.csv")
-df_True = pd.read_csv("/content/dataset/True.csv")
+import os
+DATA_DIR = os.environ.get("FND_DATA_DIR", "Prototype/data/raw")
+df_Fake = pd.read_csv(os.path.join(DATA_DIR, "Fake.csv"))
+df_True = pd.read_csv(os.path.join(DATA_DIR, "True.csv"))
 
 # Add labels before merging
 df_Fake["label"] = 0     # Fake = 0
@@ -138,7 +140,7 @@ loss, acc = model.evaluate([X_test, t_test], y_test)
 print("Test Accuracy:", acc)
 
 # The Explainability
-class_names = ["REAL", "FAKE"]
+class_names = ["FAKE", "REAL"]   # index = label (0 = fake, 1 = real)
 
 explainer = LimeTextExplainer(class_names=class_names)
 
@@ -168,6 +170,6 @@ def predict_news(text):
 
     p = model.predict([pad, tvec])[0][0]
     print(p)
-    return "FAKE" if p >= 0.5 else "REAL"
+    return "REAL" if p >= 0.5 else "FAKE"   # label 1 = REAL (True.csv)
 
 print(predict_news("The planet mars blew up today"))

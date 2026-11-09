@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fake News Detector - free, private, in-browser AI fake news checker</title>
+<meta name="description" content="Free open-source fake news detector. Paste an article or headline and a machine-learning model (TF-IDF + logistic regression, trained on 60,000+ articles) says REAL or FAKE and marks the words that drove the decision. Runs 100% in your browser - nothing is uploaded.">
+<meta name="keywords" content="fake news detection, fake news detector, misinformation, NLP, machine learning, text classification, TF-IDF, logistic regression, explainable AI, open source">
+<meta name="author" content="Pavan Gorintla">
+<link rel="canonical" href="https://gorintlapavanprasad.github.io/Fake_news_Detection/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Fake News Detector - in-browser, explainable, open source">
+<meta property="og:description" content="Paste an article, get REAL or FAKE and see the words that drove the decision. 100% client-side.">
+<meta property="og:url" content="https://gorintlapavanprasad.github.io/Fake_news_Detection/">
+<meta name="twitter:card" content="summary">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231c2024'/%3E%3Cpath d='M7 17l6 6 12-14' stroke='%23f6f7f5' stroke-width='4' fill='none'/%3E%3C/svg%3E">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Fake News Detector",
+"url":"https://gorintlapavanprasad.github.io/Fake_news_Detection/","applicationCategory":"UtilitiesApplication",
+"operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+"description":"Open-source, in-browser fake news classifier that marks the words behind its decision.",
+"author":{"@type":"Person","name":"Pavan Gorintla"},
+"codeRepository":"https://github.com/gorintlapavanprasad/Fake_news_Detection","license":"https://opensource.org/licenses/MIT"}
+</script>
+<style>
+/* Design notes: DESIGN.md. Proof-sheet idea: hairlines, serif text, red/green pen marks. */
+:root{
+  --paper:#f6f7f5;--ink:#1c2024;--rule:#cfd3cc;--mute:#5d6560;
+  --fake:#a8281f;--real:#1d6b43;--unsure:#8a5b00;
+  --serif:Charter,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace;
+}
+@media(prefers-color-scheme:dark){:root{--paper:#15181a;--ink:#e6e8e3;--rule:#343a3d;--mute:#9aa29c;--fake:#ee8a80;--real:#7fcf9d;--unsure:#e0b252}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.6 var(--serif)}
+a{color:inherit;text-underline-offset:3px}
+.page{max-width:1040px;margin:0 auto;padding:44px 24px 70px;display:grid;grid-template-columns:15rem minmax(0,1fr);gap:56px}
+@media(max-width:800px){.page{grid-template-columns:1fr;gap:28px;padding-top:28px}}
+aside h1{font-size:1.9rem;line-height:1.1;letter-spacing:-.01em;margin:0 0 14px;font-weight:700}
+aside p{margin:0 0 14px;font-size:1rem;color:var(--mute)}
+aside nav{font:.9rem/1.9 var(--sans);border-top:1px solid var(--rule);padding-top:12px;margin-top:22px}
+aside nav a{display:block;text-decoration:none}aside nav a:hover{text-decoration:underline}
+label{display:block;font:.82rem var(--sans);color:var(--mute);margin:0 0 4px}
+input,textarea{width:100%;background:transparent;color:var(--ink);border:1px solid var(--rule);border-radius:3px;padding:10px 12px;font:inherit;font-size:1rem}
+textarea{min-height:210px;resize:vertical;margin-bottom:0}
+input:focus,textarea:focus{outline:2px solid var(--ink);outline-offset:0;border-color:var(--ink)}
+.field{margin-bottom:16px}
+.actions{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+button{font:600 .95rem var(--sans);cursor:pointer;border-radius:3px}
+.go{background:var(--ink);color:var(--paper);border:1px solid var(--ink);padding:9px 22px}
+.go:disabled{opacity:.45;cursor:default}
+.lnk{background:none;border:0;padding:0;color:var(--ink);font-weight:400;text-decoration:underline;text-underline-offset:3px}
+.count{margin-left:auto;font:.82rem var(--mono);color:var(--mute)}
+.err{color:var(--fake);font:.9rem var(--sans);min-height:1.3em;margin:8px 0 0}
+#out{display:none;margin-top:30px;border-top:2px solid var(--ink);padding-top:18px}
+.verdict{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+.stamp{font:700 1.5rem var(--mono);letter-spacing:.04em;border:3px solid currentColor;padding:2px 14px;transform:rotate(-1.5deg);display:inline-block}
+.stamp.REAL{color:var(--real)}.stamp.FAKE{color:var(--fake)}.stamp.UNSURE{color:var(--unsure)}
+.verdict p{margin:0}
+.line{position:relative;height:30px;margin:22px 2px 6px;border-bottom:1px solid var(--ink)}
+.line i{position:absolute;bottom:-1px;width:0;height:0;border:7px solid transparent;border-bottom:12px solid var(--ink);border-top:0;margin-left:-7px;transition:left .45s ease-out}
+.line b{position:absolute;bottom:-1px;width:1px;height:8px;background:var(--ink)}
+.ends{display:flex;justify-content:space-between;font:.78rem var(--mono);color:var(--mute)}
+.sheet{margin:26px 0 8px;padding:16px 18px;border:1px solid var(--rule);border-radius:3px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;font-size:1.02rem}
+.sheet .t{font-weight:700}
+.f1{background:color-mix(in srgb,var(--fake) 14%,transparent)}.f2{background:color-mix(in srgb,var(--fake) 30%,transparent)}.f3{background:color-mix(in srgb,var(--fake) 52%,transparent)}
+.r1{background:color-mix(in srgb,var(--real) 14%,transparent)}.r2{background:color-mix(in srgb,var(--real) 30%,transparent)}.r3{background:color-mix(in srgb,var(--real) 52%,transparent)}
+.key{font:.82rem var(--sans);color:var(--mute);margin:0 0 14px}
+.sig{font-size:.98rem;margin:6px 0}.sig b{font:600 .82rem var(--sans);display:inline-block;min-width:8.5rem}
+.note{font:.88rem/1.5 var(--sans);color:var(--unsure);margin:6px 0}
+section{margin-top:44px;border-top:1px solid var(--rule);padding-top:16px}
+h2{font-size:1.25rem;margin:0 0 8px;letter-spacing:-.005em}
+section p,section li{font-size:1rem}section ul{padding-left:1.1rem}
+dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 24px;font-size:1rem}
+dt{color:var(--ink)}dd{margin:0;font:600 1rem var(--mono);text-align:right}
+.small{font:.88rem var(--sans);color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="page">
+<aside>
+ <h1>Fake News Detector</h1>
+ <p>Paste an article and a small language model marks the words that made it look real or fake.</p>
+ <p>It runs in this tab. Your text is never sent anywhere.</p>
+ <nav aria-label="Page sections"><a href="#how">How it works</a><a href="#numbers">The numbers</a><a href="#limits">What it can't do</a><a href="https://github.com/gorintlapavanprasad/Fake_news_Detection">Source on GitHub</a></nav>
+</aside>
+
+<main>
+ <div class="field"><label for="title">Headline (optional)</label><input id="title" autocomplete="off"></div>
+ <div class="field"><label for="text">Article text</label><textarea id="text" placeholder="Paste the article here. Ctrl+Enter checks it."></textarea></div>
+ <div class="actions">
+  <button class="go" id="go" disabled>Check article</button>
+  <button class="lnk" data-ex="real">load a wire-style sample</button>
+  <button class="lnk" data-ex="fake">load a clickbait sample</button>
+  <button class="lnk" id="clear">clear</button>
+  <span class="count" id="cnt">0 words</span>
+ </div>
+ <p class="err" id="err" role="alert"></p>
+
+ <div id="out" aria-live="polite">
+  <div class="verdict"><span class="stamp" id="stamp"></span><p id="sentence"></p></div>
+  <div class="line" id="line"><b style="left:0"></b><b style="left:50%"></b><b style="right:0"></b><i id="mark" style="left:50%"></i></div>
+  <div class="ends"><span>fake</span><span>50/50</span><span>real</span></div>
+  <div class="sheet" id="sheet" tabindex="0" aria-label="Your text with evidence marked"></div>
+  <p class="key">Marked words changed the score. <span class="f2">Red</span> pushes toward fake, <span class="r2">green</span> toward real; darker means stronger.</p>
+  <p class="sig"><b>Toward real</b><span id="rw"></span></p>
+  <p class="sig"><b>Toward fake</b><span id="fw"></span></p>
+  <div id="notes"></div>
+ </div>
+
+ <section id="how">
+  <h2>How it works</h2>
+  <p>The text is lower-cased and stripped of links, digits and punctuation. Source giveaways such as a "(Reuters)" dateline are removed, so the model can't just recognise the outlet. What's left becomes TF-IDF weights over 30,000 words and word pairs, which a logistic regression turns into a probability.</p>
+  <p>The same arithmetic runs in Python for training and in JavaScript here. A test feeds both the same 25 texts and requires the answers to agree to within 0.001. The whole model is a 0.9 MB file.</p>
+ </section>
+
+ <section id="numbers">
+  <h2>The numbers</h2>
+  <dl>
+   <dt>Held-out articles from ISOT (Reuters vs. fake-news sites)</dt><dd id="a1">...</dd>
+   <dt>Held-out articles from WELFake (mixed outlets)</dt><dd id="a2">...</dd>
+   <dt>Trained on ISOT alone, tested on WELFake</dt><dd>about 50%</dd>
+   <dt>Celebrity gossip (GossipCop), never seen in training</dt><dd id="a3">...</dd>
+   <dt>Articles used to train this model</dt><dd id="ntr">...</dd>
+  </dl>
+  <p class="small">The third row is why the model learns from more than one source: trained on ISOT alone it was right about half the time on articles from other outlets, which is chance for two classes. The fourth row is the honest limit: on celebrity gossip, a topic it never saw, it is wrong more often than right and tends to call real stories fake. Treat results on non-political news with extra suspicion.</p>
+ </section>
+
+ <section id="limits">
+  <h2>What it can't do</h2>
+  <ul>
+   <li>It scores writing style learned from mostly English, US-politics articles from 2016 and 2017. It does not check whether any claim is true.</li>
+   <li>Satire, opinion columns, other languages and brand-new topics can fool it. Under 10 words it says unsure.</li>
+   <li>Use it as a prompt to look closer, then check the source and a fact-checking site.</li>
+  </ul>
+ </section>
+</main>
+</div>
+
+<script src="engine.js"></script>
+<script>
+(function(){
+"use strict";
+var $=function(i){return document.getElementById(i)},model=null;
+var EX={
+ real:["Senate passes budget bill","The Senate voted 52-48 on Tuesday to approve a federal budget bill after weeks of negotiation between party leaders, sending it to the House for consideration, officials said."],
+ fake:["SHOCKING: Secret elites control the weather","You will not believe what they are hiding! Insiders reveal the shadowy elite use machines to control storms. Share this before it gets deleted by the mainstream media!!!"]};
+
+function upd(){$("cnt").textContent=FND.clean($("title").value+" "+$("text").value).length+" words"}
+
+function level(c){var a=Math.abs(c);return a>=1?3:a>=.4?2:a>=.15?1:0}
+
+function annotate(el,title,text,uni){
+ el.textContent="";
+ function add(str,bold){
+  var re=/[A-Za-z]+/g,last=0,m,frag=document.createDocumentFragment(),box=bold?document.createElement("span"):frag;
+  if(bold)box.className="t";
+  while((m=re.exec(str))){
+   if(m.index>last)box.appendChild(document.createTextNode(str.slice(last,m.index)));
+   var c=Object.prototype.hasOwnProperty.call(uni,m[0].toLowerCase())?uni[m[0].toLowerCase()]:0,l=level(c);
+   if(l){var s=document.createElement("span");s.className=(c<0?"f":"r")+l;s.textContent=m[0];box.appendChild(s)}
+   else box.appendChild(document.createTextNode(m[0]));
+   last=re.lastIndex;
+  }
+  if(last<str.length)box.appendChild(document.createTextNode(str.slice(last)));
+  if(bold)frag.appendChild(box);
+  el.appendChild(frag);
+ }
+ var shown=text.length>20000?text.slice(0,20000)+"\n[...]":text;
+ if(title.trim()){add(title.trim(),true);el.appendChild(document.createTextNode("\n\n"))}
+ add(shown,false);
+}
+
+function list(el,arr){el.textContent=arr.length?arr.map(function(x){return x[0]}).join(", "):"none found"}
+
+function run(){
+ $("err").textContent="";
+ if(!model)return;
+ var title=$("title").value,text=$("text").value;
+ if(!(title+text).trim()){$("err").textContent="Enter a headline or some article text first.";return}
+ var r=FND.analyse(model,title,text),conf=Math.max(r.pReal,1-r.pReal),label=r.pReal>=.5?"REAL":"FAKE",unsure=conf<.7||r.words<10;
+ var shown=unsure?"UNSURE":label;
+ $("stamp").textContent=shown;$("stamp").className="stamp "+shown;
+ $("sentence").textContent=unsure
+  ?"The model leans "+label.toLowerCase()+" ("+Math.min(99,Math.round(conf*100))+"%) but not strongly enough to call it. "+r.words+" words read."
+  :Math.min(99,Math.round(conf*100))+"% confident it is "+label.toLowerCase()+". "+r.words+" words read.";
+ $("mark").style.left=(r.pReal*100)+"%";
+ annotate($("sheet"),title,text,r.unigrams);
+ list($("rw"),r.real);list($("fw"),r.fake);
+ var n=[];
+ if(r.words<25)n.push("Short text: results are less reliable.");
+ n.push("This scores writing style, not facts. Check the claims elsewhere.");
+ $("notes").replaceChildren.apply($("notes"),n.map(function(t){var p=document.createElement("p");p.className="note";p.textContent=t;return p}));
+ $("out").style.display="block";$("out").scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+
+document.querySelectorAll("[data-ex]").forEach(function(b){b.onclick=function(){var e=EX[b.dataset.ex];$("title").value=e[0];$("text").value=e[1];upd()}});
+$("clear").onclick=function(){$("title").value=$("text").value="";$("out").style.display="none";$("err").textContent="";upd()};
+$("go").onclick=run;$("text").oninput=$("title").oninput=upd;
+$("text").onkeydown=function(e){if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))run()};
+
+fetch("model.json").then(function(r){return r.json()}).then(function(m){
+ model=m;$("go").disabled=false;var a=m.metrics.heldout_acc;
+ $("a1").textContent=(a.ISOT*100).toFixed(1)+"%";$("a2").textContent=(a.WELFake*100).toFixed(1)+"%";
+ if(m.metrics.unseen_acc)$("a3").textContent=(m.metrics.unseen_acc.GossipCop_human*100).toFixed(1)+"%";
+ $("ntr").textContent=m.metrics.n_train.toLocaleString("en-US");
+}).catch(function(){$("err").textContent="The model file (model.json) didn't load. If you opened this page as a local file, serve the folder over http instead."});
+})();
+</script>
+</body></html>

@@ -1,9 +1,0 @@
-#!/bin/sh
-'''exec' "/Users/pavankutti/Documents/PHD/Semester_2/CS_572_Unsupervised_M_L /fake_news_detection_project/venv/bin/python3" "$0" "$@"
-' '''
-import sys
-from fontTools.ttx import main
-if __name__ == '__main__':
-    if sys.argv[0].endswith('.exe'):
-        sys.argv[0] = sys.argv[0][:-4]
-    sys.exit(main())

@@ -1,117 +1,90 @@
-# Explainable AI in Fake News Detection
+# Fake News Detector
 
-A comprehensive end-to-end Fake News Detection system built using classical Machine Learning models and a custom Hybrid Deep Learning architecture.
-This project demonstrates modern NLP preprocessing, topic modeling, embedding techniques, and model explainability.
+[![CI](https://github.com/gorintlapavanprasad/Fake_news_Detection/actions/workflows/ci.yml/badge.svg)](https://github.com/gorintlapavanprasad/Fake_news_Detection/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://gorintlapavanprasad.github.io/Fake_news_Detection/)
 
-## Overview
-This repository implements and compares three different approaches to detecting fake news:
+**An open-source fake news classifier that runs entirely in your browser and shows which words drove each decision.**
 
-### Hybrid Deep Learning Model (CNN + BiLSTM + Attention + Word2Vec + LDA)
+**[Try the live demo](https://gorintlapavanprasad.github.io/Fake_news_Detection/)**. Paste an article, get REAL or FAKE, and see the evidence words marked in red and green inside your own text. Nothing is uploaded and no API keys are used.
 
-A powerful neural architecture that combines:  
-    - Word2Vec embeddings  
-    - LDA topic vectors  
-    - Convolution layers for local pattern recognition  
-    - BiLSTM for sequential context  
-    - Custom Attention layer for focusing on key phrases  
+Keywords: fake news detection, misinformation, NLP, text classification, TF-IDF, logistic regression, DistilBERT, explainable AI, GitHub Pages, JavaScript, Python, scikit-learn.
 
-### Random Forest Model
+## What is different here
 
-A classical ML baseline using:  
-    - Average Word2Vec embeddings  
-    - LDA topic vectors  
-    - 110-dimensional engineered features  
-    - Strong interpretability + fast inference  
+Most fake-news repos report 99% on one dataset and stop. This project measures what happens on other data, and says so.
 
-### Decision Tree Model
+| Test | Result |
+|---|---|
+| Held-out articles, ISOT (Reuters vs. fake-news sites) | 97.1% |
+| Held-out articles, WELFake (mixed outlets, no overlap with ISOT) | 89.9% |
+| Trained on ISOT alone, tested on WELFake | about 50% (chance) |
+| Celebrity gossip (GossipCop), never seen in training | 41.7% (below chance) |
 
-A fully interpretable model using the same engineered features.
-Useful for understanding feature importance and rule-based splitting.
+- The original dataset has giveaways, such as "(Reuters)" datelines, that let a model score about 99% without learning anything about truth. They are stripped before training.
+- A model trained on one source collapses on another. Training on two sources fixed most of that for news, but not for a new genre such as celebrity gossip. The site shows this limit openly.
+- DistilBERT was fine-tuned too (95.6% and 84.1% on 800 held-out articles per dataset, 3,000 training articles, one epoch, CPU only). It did not beat the TF-IDF model under that budget, and at about 270 MB it cannot ship in a static site.
 
-## Dataset
-Kindly download the dataset and store it in the same folder as the main file. Also modify the dataset file path accordingly
+## How it works
 
-dataset:
-<https://www.kaggle.com/datasets/emineyetm/fake-news-detection-datasets>
+```
+article text -> clean (strip links, digits, source giveaways)
+             -> TF-IDF over 30,000 words and word pairs
+             -> logistic regression -> probability of REAL
+             -> per-word contributions -> highlighted evidence
+```
 
+The same arithmetic is implemented twice: in Python (`improved/`) for training and in JavaScript (`docs/engine.js`) for the website. `tests/test_parity.mjs` feeds both the same texts and requires agreement within 0.001 (measured worst gap: 8e-7). `tests/eval_js_engine.mjs` scores the JavaScript engine on 1,500 held-out articles per dataset and requires its accuracy to match Python's.
 
-## Problem Statement
-Fake news creates misinformation, social mistrust, and real-world harm.
-The goal of this project is to build models that can accurately classify news articles as FAKE or REAL using advanced NLP techniques.
+## Run it
 
-## Methodology
-### 1. Data Preprocessing
+Website (no build step):
+```bash
+cd docs && python -m http.server 8000     # open http://localhost:8000
+```
 
-Every script uses a unified preprocessing pipeline:  
-    ✔ Text cleaning  
-        - Lowercasing  
-        - Removing URLs  
-        - Removing punctuation/numbers  
-        - Stopword removal  
-        - Tokenization  
-    ✔ Train/Test Split  
+Retrain from scratch:
+```bash
+pip install -r requirements-dev.txt
+# put Fake.csv and True.csv (Kaggle "Fake and Real News", ISOT) in Prototype/data/raw/
+cd improved
+python run_experiments.py --data ../Prototype/data/raw      # 16 model/feature variations
+python prepare_external.py --isot ../Prototype/data/raw     # second dataset (WELFake), see below
+python export_web.py --isot ../Prototype/data/raw --ext external/welfake_clean.csv
+```
 
-Performed before any modeling to avoid data leakage.  
+Tests:
+```bash
+pytest tests
+node tests/test_parity.mjs
+node tests/test_engine_robustness.mjs
+```
 
+Data sources: ISOT from [Kaggle](https://www.kaggle.com/datasets/emineyetm/fake-news-detection-datasets); WELFake (`davanstrien/WELFake`) and GossipCop (`Jinyan1/GossipCop`) from Hugging Face. Check each dataset's license before redistributing it. The repo stores no datasets, only a 25-article sample (`docs/parity.json`) used to test the browser engine.
 
-### 2. Feature Engineering
-    
-• Word2Vec  
-     A custom Word2Vec model is trained only on the training set  
-     → Documents represented as the average vector of all word embeddings (100-dim).  
+## Repository layout
 
-• LDA Topic Modeling  
-     - Captures global document semantics  
-     - Trained only on training data  
+| Path | What it holds |
+|---|---|
+| `docs/` | The static website served by GitHub Pages, its model file and the design notes |
+| `improved/` | Cleaning code, experiments, external-data preparation, DistilBERT fine-tuning, Flask demo |
+| `tests/` | Python unit tests and Node tests for the browser engine |
+| `Prototype/` | Original PyTorch BiLSTM + attention model (config-driven) |
+| `main.py`, `FND_using_*.py` | Original TensorFlow hybrid and classical scripts, now runnable locally |
+| `PROJECT_REPORT.md` | Full analysis, 16-experiment table, problems found, roadmap |
 
-## Evaluation Metrics
+## Limits
 
-Each model reports:  
-1. Accuracy  
-    - Precision, Recall, F1-Score  
-    - Confusion Matrix  
-    - Example predictions  
-    - LIME explanations  
+It scores writing style learned from mostly English, US-politics articles from 2016 and 2017. It cannot verify facts, and it is unreliable on satire, opinion, other languages and unfamiliar topics such as entertainment news. Use it as a prompt to look closer, never as a verdict.
 
-2. Typical performance range:  
-    - Decision Tree → 94%  
-    - Random Forest → 97%  
-    - Hybrid DL Model → 99.5%
-  
-## How to Run the Models
-Install dependencies:
--     pip install numpy pandas nltk gensim scikit-learn tensorflow lime
+## Roadmap
 
-Run any script:
--     python main.py                          # Hybrid Model  
--     python FND_using_random_forest.py       # Random Forest  
--     python FND_using_decision_tree.py       # Decision Tree
+1. Add evidence retrieval (search or fact-check APIs) so claims, not only style, are checked. This needs a server and keys, so it cannot live on GitHub Pages.
+2. Fine-tune DistilBERT on the full data with a GPU and compare on the unseen-source tests.
+3. Collect more varied training sources (entertainment, health, science) and recalibrate the probabilities.
 
-Dataset should contain two files:
--     Fake.csv
--     True.csv
+## Contributing and license
 
-## Key Insights
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Released under the [MIT license](LICENSE). Cite via [CITATION.cff](CITATION.cff).
 
-Hybrid models combining embeddings + topics + attention outperform classical ML
-
-- Random Forests are great baselines and surprisingly strong.  
-- Decision Trees offer interpretability with lower accuracy.  
-- LDA topics significantly improve feature richness.  
-- Word2Vec improves semantic understanding over TF-IDF.  
-- LIME reveals which words influence model predictions.  
-
-
-## Possible Enhancements
-
-- Upgrade to BERT / DistilBERT embeddings.  
-- Add ROC-AUC curves and more metrics.  
-- Hyperparameter tuning via grid search / Optuna.  
-- Deploy using FastAPI or Flask.  
-- Streamlit dashboard for live predictions.  
-
-
-## Contributors
-1. Smirthya Somaskantha Iyer
-2. Rahul Rubugunday
-3. Pavan Gorintla
+Authors: Pavan Gorintla, Smirthya Somaskantha Iyer, Rahul Rubugunday.

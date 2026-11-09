@@ -7,7 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1S3wHBfTueMnTzPsoi0oy4_0GHBXqYXFn
 """
 
-!pip install lime gensim -q
+# Install deps with: pip install -r requirements.txt
+import os
+DATA_DIR = os.environ.get("FND_DATA_DIR", "Prototype/data/raw")
 
 import pandas as pd
 import numpy as np
@@ -49,8 +51,8 @@ random.seed(42)
 # ==========================
 # 1. Load & label data
 # ==========================
-df_Fake = pd.read_csv("/content/drive/MyDrive/Fake News Detection/Fake.csv")
-df_True = pd.read_csv("/content/drive/MyDrive/Fake News Detection/True.csv")
+df_Fake = pd.read_csv(os.path.join(DATA_DIR, "Fake.csv"))
+df_True = pd.read_csv(os.path.join(DATA_DIR, "True.csv"))
 
 df_Fake["label"] = 0   # Fake
 df_True["label"] = 1   # Real

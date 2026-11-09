@@ -1,0 +1,17 @@
+{
+  "trained_on": "combined",
+  "n_train": 3000,
+  "epochs": 1,
+  "max_len": 128,
+  "train_seconds": 2281,
+  "test_ISOT": {
+    "acc": 0.9563,
+    "f1": 0.963,
+    "n": 800
+  },
+  "test_WELFake": {
+    "acc": 0.8413,
+    "f1": 0.8493,
+    "n": 800
+  }
+}

@@ -1,0 +1,7 @@
+model,trained_on,test_ISOT_acc,test_ISOT_f1,test_WELFake_acc,test_WELFake_f1
+logreg,ISOT,0.9867,0.9879,0.4965,0.2613
+logreg,WELFake,0.7497,0.7918,0.9267,0.9351
+logreg,Combined,0.9706,0.9738,0.8989,0.9071
+linsvc,ISOT,0.9897,0.9906,0.4844,0.2116
+linsvc,WELFake,0.7408,0.7829,0.9349,0.9423
+linsvc,Combined,0.9734,0.9761,0.9081,0.9157

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+venv/
+Prototype/venv/
+Prototype/data/
+Prototype/outputs/
+improved/external/
+improved/bert_*/
+improved/*.joblib
+build/
+*.joblib
+.DS_Store
